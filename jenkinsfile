@@ -1,0 +1,79 @@
+pipeline {
+    agent {
+        docker {
+            image 'python:3.8' // Utiliser une image Docker contenant Python et pip
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Si nécessaire pour les conteneurs Docker dans Docker
+        }
+    }
+    
+    environment {
+        KUBE_CONFIG_PATH_NA = credentials('kube-na')
+        KUBE_CONFIG_PATH_EU = credentials('kub-eu')
+    }
+    
+    stages {
+        stage('Install dependencies') {
+            steps {
+                sh '''
+                python -m venv venv
+                . venv/bin/activate
+                pip install kubernetes
+                '''
+            }
+        }
+        
+        stage('Integrate with Source k8s (NA)') {
+            steps {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
+                    sh 'chmod u+x ./kubectl'
+                    sh './kubectl get nodes'
+                    sh './kubectl get pods'
+                    sh './kubectl get services'
+                }
+            }
+        }
+        
+        stage('Export Deployment and Service from Source (NA)') {
+            steps {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
+                    sh './kubectl get deployment podmigration-testapp -o yaml > deployment.yaml'
+                    sh './kubectl get service podmigration-testapp-service -o yaml > service.yaml'
+                    archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
+                }
+            }
+        }
+        
+        stage('Integrate with Destination k8s (EU)') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
+                    sh 'chmod u+x ./kubectl'
+                    sh './kubectl get nodes'
+                }
+            }
+        }
+        
+        stage('Migrate Deployment and Service to Destination (EU)') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    // Assurez-vous que les fichiers sont disponibles avant de les appliquer
+                    sh 'ls -l deployment.yaml service.yaml'
+                    
+                    // Appliquer les fichiers YAML
+                    sh './kubectl apply -f deployment.yaml'
+                    sh './kubectl apply -f service.yaml'
+                }
+            }
+        }
+        
+        stage('Run Migration Script') {
+            steps {
+                sh '''
+                . venv/bin/activate
+                python3 mig.py --existing_pod_name decision1 --new_pod_name decision2 --new_node_name gke-cluster-eu-default-pool-a69f98b2-7b7j
+                '''
+            }
+        }
+    }
+}
