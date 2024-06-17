@@ -58,41 +58,12 @@ pipeline {
                 }
             }
         }
-      stage('Delete Old Deployment and Service from Source (NA)') {
-            steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
-                    script {
-                        // Supprimer les anciens déploiements
-                        def deployments = sh(script: "./kubectl get deployments --no-headers -o custom-columns=\":metadata.name\" | grep '^podmigration-testapp'", returnStdout: true).trim()
-                        deployments.split('\n').each { deployment ->
-                            sh "./kubectl delete deployment ${deployment}"
-                        }
-                        
-                        // Supprimer les anciens services
-                        def services = sh(script: "./kubectl get services --no-headers -o custom-columns=\":metadata.name\" | grep '^podmigration-testapp'", returnStdout: true).trim()
-                        services.split('\n').each { service ->
-                            sh "./kubectl delete service ${service}"
-                        }
-                    }
-                }
-            }
-        }
         stage('Delete Old Deployment and Service from Source (NA)') {
             steps {
                 withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
-                    script {
-                        // Supprimer les anciens déploiements
-                        def deployments = sh(script: "./kubectl get deployments --no-headers -o custom-columns=\":metadata.name\" | grep '^podmigration-testapp'", returnStdout: true).trim()
-                        deployments.split('\n').each { deployment ->
-                            sh "./kubectl delete deployment ${deployment}"
-                        }
-                        
-                        // Supprimer les anciens services
-                        def services = sh(script: "./kubectl get services --no-headers -o custom-columns=\":metadata.name\" | grep '^podmigration-testapp'", returnStdout: true).trim()
-                        services.split('\n').each { service ->
-                            sh "./kubectl delete service ${service}"
-                        }
-                    }
+                    // Supprimer les anciens déploiement et service
+                    sh './kubectl delete deployment podmigration-testapp'
+                    sh './kubectl delete service podmigration-testapp-service'
                 }
             }
         }
