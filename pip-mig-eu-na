@@ -28,7 +28,7 @@ pipeline {
                     def nodeParam = 'gke-cluster-na-default-pool-a0083f06-2htb' // Nouveau nom de nœud en NA
 
                     // Assurez-vous que le script Python est accessible depuis Jenkins
-                    sh "python3 modify_yaml.py ${inputYaml} ${outputYaml} ${nodeParam}"
+                    sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
                     // Archivage du fichier modifié pour utilisation ultérieure
                     archiveArtifacts artifacts: 'deployment_modified.yaml', allowEmptyArchive: true
