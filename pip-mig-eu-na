@@ -19,6 +19,16 @@ pipeline {
             }
         }
     
+        stage('Export Deployment and Service from Source (EU)') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    sh './kubectl get deployment podmigration-testapp -o yaml > deployment.yaml'
+                    sh './kubectl get service podmigration-testapp-service -o yaml > service.yaml'
+                    archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
+                }
+            }
+        }
+    
         stage('Modify Deployment YAML for Migration') {
             steps {
                 script {
