@@ -7,16 +7,6 @@ pipeline {
     }
 
 
-    stages {
-        stage('Install dependencies') {
-            steps {
-                sh '''
-                python -m venv venv
-                . venv/bin/activate
-                pip install kubernetes
-                '''
-            }
-        }
         stage('Debug') {
             steps {
                 sh 'which python3' // Vérifiez l'emplacement de Python3
