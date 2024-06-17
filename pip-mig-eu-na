@@ -68,5 +68,14 @@ pipeline {
                 }
             }
         }
+  stage('Delete Old Deployment and Service from Source (EU)') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    // Supprimer les anciens déploiement et service
+                    sh './kubectl delete deployment podmigration-testapp'
+                    sh './kubectl delete service podmigration-testapp-service'
+                }
+            }
+        }
     }
 }
