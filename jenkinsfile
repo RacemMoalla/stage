@@ -6,13 +6,14 @@ pipeline {
         KUBE_CONFIG_PATH_EU = credentials('kub-eu')
     }
 
-
-        stage('Debug') {
+    stages {
+        stage('Install dependencies') {
             steps {
-                sh 'which python3' // Vérifiez l'emplacement de Python3
-                sh 'python3 --version' // Vérifiez la version de Python3
-                sh 'pip --version' // Vérifiez la version de pip
-                sh 'pip list' // Affichez les packages Python installés
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install kubernetes
+                '''
             }
         }
 
@@ -58,14 +59,13 @@ pipeline {
             }
         }
 
-      stage('Run Migration Script') {
-          steps {
-              sh '''
-        .     venv/bin/activate
-              /usr/bin/python3 mig.py --existing_pod_name decision1 --new_pod_name decision2 --new_node_name gke-cluster-eu-default-pool-a69f98b2-7b7j
-              '''
-          }
-     }
-
+        stage('Run Migration Script') {
+            steps {
+                sh '''
+                . venv/bin/activate
+                python3 mig.py --existing_pod_name decision1 --new_pod_name decision2 --new_node_name gke-cluster-eu-default-pool-a69f98b2-7b7j
+                '''
+            }
+        }
     }
-
+}
