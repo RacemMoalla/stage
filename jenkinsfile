@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.8'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
         KUBE_CONFIG_PATH_NA = credentials('kube-na')
@@ -68,7 +63,7 @@ pipeline {
             steps {
                 sh '''
                 . venv/bin/activate
-                python3 mig.py --existing_pod_name decision1 --new_pod_name decision2 --new_node_name gke-cluster-eu-default-pool-a69f98b2-7b7j
+                python3 migration.py --existing_pod_name decision1 --new_pod_name decision2 --new_node_name gke-cluster-eu-default-pool-a69f98b2-7b7j
                 '''
             }
         }
