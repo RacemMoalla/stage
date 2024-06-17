@@ -62,8 +62,8 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
                     // Supprimer les anciens déploiement et service
-                    sh './kubectl delete deployment podmigration-testapp'
-                    sh './kubectl delete service podmigration-testapp-service'
+                    sh './kubectl delete deployment -l podmigration-testapp'
+                    sh './kubectl delete service -l podmigration-testapp-service'
                 }
             }
         }
