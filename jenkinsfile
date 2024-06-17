@@ -5,14 +5,7 @@ pipeline {
         KUBE_CONFIG_PATH_NA = credentials('kube-na')
         KUBE_CONFIG_PATH_EU = credentials('kub-eu')
     }
-    stage('Debug') {
-        steps {
-            sh 'which python3' // Vérifiez l'emplacement de Python3
-            sh 'python3 --version' // Vérifiez la version de Python3
-            sh 'pip --version' // Vérifiez la version de pip
-            sh 'pip list' // Affichez les packages Python installés
-        }
-}
+
 
     stages {
         stage('Install dependencies') {
@@ -22,6 +15,14 @@ pipeline {
                 . venv/bin/activate
                 pip install kubernetes
                 '''
+            }
+        }
+        stage('Debug') {
+            steps {
+                sh 'which python3' // Vérifiez l'emplacement de Python3
+                sh 'python3 --version' // Vérifiez la version de Python3
+                sh 'pip --version' // Vérifiez la version de pip
+                sh 'pip list' // Affichez les packages Python installés
             }
         }
 
