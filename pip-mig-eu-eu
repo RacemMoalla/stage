@@ -38,6 +38,7 @@ pipeline {
                         echo "Pod ${params.POD_NAME} found in namespace ${params.NAMESPACE}"
                     }
                 }
+                }
             }
         }
 
