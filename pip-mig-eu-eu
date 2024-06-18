@@ -15,11 +15,14 @@ pipeline {
         stage('Integrate with k8s (EU)') {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
-                    sh 'chmod u+x ./kubectl'
-                    sh './kubectl get nodes'
-                    sh './kubectl get pods -n ${params.NAMESPACE}'
-                    sh './kubectl get services -n ${params.NAMESPACE}'
+                    sh '''
+                        #!/bin/bash
+                        curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"
+                        chmod u+x ./kubectl
+                        ./kubectl get nodes
+                        ./kubectl get pods -n ${NAMESPACE}
+                        ./kubectl get services -n ${NAMESPACE}
+                    '''
                 }
             }
         }
@@ -27,11 +30,7 @@ pipeline {
         stage('Verify Pod Exists') {
             steps {
                 script {
-                    def pods = sh(script: "./kubectl get pods -n ${params.NAMESPACE}", returnStdout: true).trim()
-                    echo "Pods in namespace ${params.NAMESPACE}: ${pods}"
-                    
-                    def podExists = sh(script: "kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} || echo 'PodNotFound'", returnStdout: true).trim()
-                    
+                    def podExists = sh(script: "./kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} || echo 'PodNotFound'", returnStdout: true).trim()
                     if (podExists == 'PodNotFound') {
                         error "Pod ${params.POD_NAME} not found in namespace ${params.NAMESPACE}"
                     } else {
@@ -44,8 +43,11 @@ pipeline {
         stage('Export Deployment and Service') {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    sh "./kubectl get deployment ${params.POD_NAME} -n ${params.NAMESPACE} -o yaml > deployment.yaml"
-                    sh "./kubectl get service ${params.POD_NAME}-service -n ${params.NAMESPACE} -o yaml > service.yaml"
+                    sh '''
+                        #!/bin/bash
+                        ./kubectl get deployment ${params.POD_NAME} -n ${params.NAMESPACE} -o yaml > deployment.yaml
+                        ./kubectl get service ${params.POD_NAME}-service -n ${params.NAMESPACE} -o yaml > service.yaml
+                    '''
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
                 }
             }
@@ -75,8 +77,11 @@ pipeline {
                     sh 'ls -l deployment_modified.yaml service.yaml'
 
                     // Appliquer les fichiers YAML modifiés
-                    sh './kubectl apply -f deployment_modified.yaml'
-                    sh './kubectl apply -f service.yaml'
+                    sh '''
+                        #!/bin/bash
+                        ./kubectl apply -f deployment_modified.yaml
+                        ./kubectl apply -f service.yaml
+                    '''
                 }
             }
         }
@@ -85,7 +90,7 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
                     // Supprimer les anciens pods pour qu'ils soient recréés sur le nouveau nœud
-                    sh "./kubectl delete pod -l app=${params.POD_NAME} -n ${params.NAMESPACE}"
+                    sh "./kubectl delete pod ${params.POD_NAME} -n ${params.NAMESPACE}"
                 }
             }
         }
