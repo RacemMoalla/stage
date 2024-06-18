@@ -6,8 +6,9 @@ pipeline {
     }
 
     parameters {
-        string(name: 'POD_NAME', defaultValue: 'podmigration-testapp-66996bf55-wcmwb', description: 'Nom du pod à migrer')
+        string(name: 'POD_NAME', defaultValue: 'podmigration-testapp-66996bf55-mjxdh', description: 'Nom du pod à migrer')
         string(name: 'NAMESPACE', defaultValue: 'default', description: 'Namespace du pod')
+        string(name: 'TARGET_NODE', defaultValue: '', description: 'Nœud de destination pour la migration')
     }
 
     stages {
@@ -17,27 +18,25 @@ pipeline {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
-                    sh './kubectl get pods'
-                    sh './kubectl get services'
+                    sh './kubectl get pods -n ${params.NAMESPACE}'
+                    sh './kubectl get services -n ${params.NAMESPACE}'
                 }
             }
         }
 
-        stage('Select Destination Node') {
+        stage('Verify Pod Exists') {
             steps {
                 script {
-                    def current_node = sh(script: "./kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} -o=jsonpath='{.spec.nodeName}'", returnStdout: true).trim()
+                    def pods = sh(script: "./kubectl get pods -n ${params.NAMESPACE}", returnStdout: true).trim()
+                    echo "Pods in namespace ${params.NAMESPACE}: ${pods}"
                     
-                    // Obtenez la liste des nœuds et filtrez pour exclure le nœud actuel
-                    def nodes = sh(script: "./kubectl get nodes -o=jsonpath='{.items[*].metadata.name}'", returnStdout: true).trim().split(' ')
-                    def target_node = nodes.find { it != current_node }
+                    def podExists = sh(script: "kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} || echo 'PodNotFound'", returnStdout: true).trim()
                     
-                    if (target_node == null) {
-                        error "No suitable node found for migration!"
+                    if (podExists == 'PodNotFound') {
+                        error "Pod ${params.POD_NAME} not found in namespace ${params.NAMESPACE}"
+                    } else {
+                        echo "Pod ${params.POD_NAME} found in namespace ${params.NAMESPACE}"
                     }
-                    
-                    env.TARGET_NODE = target_node
-                    echo "Selected target node for migration: ${env.TARGET_NODE}"
                 }
             }
         }
@@ -58,7 +57,7 @@ pipeline {
                     // Appel du script Python pour modifier le YAML
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
-                    def nodeParam = env.TARGET_NODE // Utiliser le nœud cible sélectionné dynamiquement
+                    def nodeParam = params.TARGET_NODE // Utiliser le nœud cible spécifié par l'utilisateur
 
                     // Assurez-vous que le script Python est accessible depuis Jenkins
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
