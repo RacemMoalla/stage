@@ -16,12 +16,18 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
                     sh '''
-                        #!/bin/bash
+                        # Download and set up kubectl
                         curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"
                         chmod u+x ./kubectl
+                        ./kubectl version --client
                         ./kubectl get nodes
-                        ./kubectl get pods -n ${NAMESPACE}
-                        ./kubectl get services -n ${NAMESPACE}
+
+                        # Check if the pod exists
+                        ./kubectl get pod podmigration-testapp-66996bf55-mjxdh -n default
+
+                        # Export deployment and service YAML
+                        ./kubectl get deployment podmigration-testapp-66996bf55-mjxdh -n default -o yaml > deployment.yaml
+                        ./kubectl get service podmigration-testapp-service -n default -o yaml > service.yaml
                     '''
                 }
             }
@@ -42,18 +48,7 @@ pipeline {
             }
         }
 
-        stage('Export Deployment and Service') {
-            steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    sh '''
-                        #!/bin/bash
-                        ./kubectl get deployment ${params.POD_NAME} -n ${params.NAMESPACE} -o yaml > deployment.yaml
-                        ./kubectl get service ${params.POD_NAME}-service -n ${params.NAMESPACE} -o yaml > service.yaml
-                    '''
-                    archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
-                }
-            }
-        }
+  
 
         stage('Modify Deployment YAML for Node Migration') {
             steps {
