@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBE_CONFIG_PATH_EU = credentials('kub-eu')
+    }
+
+    parameters {
+        string(name: 'POD_NAME', defaultValue: 'podmigration-testapp-66996bf55-wcmwb', description: 'Nom du pod à migrer')
+        string(name: 'NAMESPACE', defaultValue: 'default', description: 'Namespace du pod')
+    }
+
+    stages {
+        stage('Integrate with k8s (EU)') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
+                    sh 'chmod u+x ./kubectl'
+                    sh './kubectl get nodes'
+                    sh './kubectl get pods'
+                    sh './kubectl get services'
+                }
+            }
+        }
+
+        stage('Select Destination Node') {
+            steps {
+                script {
+                    def current_node = sh(script: "./kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} -o=jsonpath='{.spec.nodeName}'", returnStdout: true).trim()
+                    
+                    // Obtenez la liste des nœuds et filtrez pour exclure le nœud actuel
+                    def nodes = sh(script: "./kubectl get nodes -o=jsonpath='{.items[*].metadata.name}'", returnStdout: true).trim().split(' ')
+                    def target_node = nodes.find { it != current_node }
+                    
+                    if (target_node == null) {
+                        error "No suitable node found for migration!"
+                    }
+                    
+                    env.TARGET_NODE = target_node
+                    echo "Selected target node for migration: ${env.TARGET_NODE}"
+                }
+            }
+        }
+
+        stage('Export Deployment and Service') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    sh "./kubectl get deployment ${params.POD_NAME} -n ${params.NAMESPACE} -o yaml > deployment.yaml"
+                    sh "./kubectl get service ${params.POD_NAME}-service -n ${params.NAMESPACE} -o yaml > service.yaml"
+                    archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Modify Deployment YAML for Node Migration') {
+            steps {
+                script {
+                    // Appel du script Python pour modifier le YAML
+                    def inputYaml = 'deployment.yaml'
+                    def outputYaml = 'deployment_modified.yaml'
+                    def nodeParam = env.TARGET_NODE // Utiliser le nœud cible sélectionné dynamiquement
+
+                    // Assurez-vous que le script Python est accessible depuis Jenkins
+                    sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
+
+                    // Archivage du fichier modifié pour utilisation ultérieure
+                    archiveArtifacts artifacts: 'deployment_modified.yaml', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Apply Modified Deployment') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    // Assurez-vous que les fichiers sont disponibles avant de les appliquer
+                    sh 'ls -l deployment_modified.yaml service.yaml'
+
+                    // Appliquer les fichiers YAML modifiés
+                    sh './kubectl apply -f deployment_modified.yaml'
+                    sh './kubectl apply -f service.yaml'
+                }
+            }
+        }
+
+        stage('Cleanup Old Pods') {
+            steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                    // Supprimer les anciens pods pour qu'ils soient recréés sur le nouveau nœud
+                    sh "./kubectl delete pod -l app=${params.POD_NAME} -n ${params.NAMESPACE}"
+                }
+            }
+        }
+    }
+}
