@@ -29,6 +29,7 @@ pipeline {
 
         stage('Verify Pod Exists') {
             steps {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
                 script {
                     def podExists = sh(script: "./kubectl get pod ${params.POD_NAME} -n ${params.NAMESPACE} || echo 'PodNotFound'", returnStdout: true).trim()
                     if (podExists == 'PodNotFound') {
