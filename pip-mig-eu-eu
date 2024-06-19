@@ -26,7 +26,7 @@ pipeline {
                         ./kubectl get pod podmigration-testapp-66996bf55-mjxdh -n default
 
                         # Export deployment and service YAML
-                        ./kubectl get deployment podmigration-testapp-66996bf55-mjxdh -n default -o yaml > deployment.yaml
+                        ./kubectl get deployment podmigration-testapp -n default -o yaml > deployment.yaml
                         ./kubectl get service podmigration-testapp-service -n default -o yaml > service.yaml
                     '''
                 }
