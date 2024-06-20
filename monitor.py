@@ -1,7 +1,7 @@
 import time
 import requests
 import subprocess
-import yaml
+import sys
 from kubernetes import client, config
 
 # Configurez les seuils pour les décisions de migration
@@ -67,16 +67,10 @@ def node_pingable(node_ip):
     response = subprocess.run(['ping', '-c', '1', node_ip], stdout=subprocess.PIPE)
     return response.returncode == 0
 
-def main():
-    eu_config = 'path/to/eu/config'
-    na_config = 'path/to/na/config'
-    namespace = 'default'
-    pod_name = 'my-pod'
-    jenkins_url = 'http://your-jenkins-url'
-    
+def main(namespace, pod_name, jenkins_url, kube_config_path_eu, kube_config_path_na):
     # Initialisation des clients Kubernetes pour chaque cluster
-    eu_api = get_kube_client(eu_config)
-    na_api = get_kube_client(na_config)
+    eu_api = get_kube_client(kube_config_path_eu)
+    na_api = get_kube_client(kube_config_path_na)
     
     while True:
         # Surveillance des ressources dans le cluster EU
@@ -98,4 +92,14 @@ def main():
         time.sleep(SLEEP_INTERVAL)
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 6:
+        print("Usage: python3 monitor_and_migrate.py <namespace> <pod_name> <jenkins_url> <kube_config_path_eu> <kube_config_path_na>")
+        sys.exit(1)
+
+    namespace = sys.argv[1]
+    pod_name = sys.argv[2]
+    jenkins_url = sys.argv[3]
+    kube_config_path_eu = sys.argv[4]
+    kube_config_path_na = sys.argv[5]
+
+    main(namespace, pod_name, jenkins_url, kube_config_path_eu, kube_config_path_na)
