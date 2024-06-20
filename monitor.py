@@ -40,11 +40,16 @@ def parse_cpu_quantity(quantity):
     return float(quantity)
 
 def parse_memory_quantity(quantity):
-    if quantity.endswith('Mi'):
+    if quantity.endswith('Ki'):
+        return float(quantity[:-2]) / 1024  # Converti en Mi
+    elif quantity.endswith('Mi'):
         return float(quantity[:-2])
-    if quantity.endswith('Gi'):
-        return float(quantity[:-2]) * 1024  # Converti Gio en Mio
-    return float(quantity)
+    elif quantity.endswith('Gi'):
+        return float(quantity[:-2]) * 1024  # Converti en Mi
+    elif quantity.endswith('Ti'):
+        return float(quantity[:-2]) * 1024 * 1024  # Converti en Mi
+    else:
+        raise ValueError(f"Unsupported memory unit: {quantity}")
 
 def get_pod_usage(api_instance, namespace):
     pod_usage = {}
