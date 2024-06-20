@@ -4,9 +4,9 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
 # Seuils pour la décision de migration
-CPU_USAGE_THRESHOLD = 0.75  # 75%
-MEMORY_USAGE_THRESHOLD = 0.75  # 75%
-SLEEP_INTERVAL = 60  # Intervalle de surveillance en secondes
+CPU_USAGE_THRESHOLD = 0.80  # 80%
+MEMORY_USAGE_THRESHOLD = 0.80  # 80%
+SLEEP_INTERVAL = 60  
 
 def get_kube_client():
     # Charge la configuration Kubernetes du contexte par défaut
