@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+
+    environment {
+        PYTHON_SCRIPT = 'monitor.py'
+        NAMESPACE = 'default'
+        POD_NAME = 'my-pod'
+        JENKINS_URL = 'http://your-jenkins-url'
+    }
+
+    stages {
+        stage('Run Monitor Script') {
+            steps {
+                script {
+                    // Assurez-vous que le script Python est exécutable
+                    sh "chmod +x ${env.PYTHON_SCRIPT}"
+                    // Exécutez le script Python avec les arguments nécessaires
+                    sh "python3 ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL}"
+                }
+            }
+        }
+    }
+
+    triggers {
+        // Planification pour exécuter ce job toutes les minutes
+        cron('*/1 * * * *')
+    }
+}
