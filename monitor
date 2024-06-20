@@ -11,6 +11,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                git url: 'https://github.com/RacemMoalla/stage.git', branch: 'main'
+            }
+        }
+
         stage('Run Monitor Script') {
             steps {
                 script {
