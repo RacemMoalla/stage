@@ -32,11 +32,11 @@ def get_node_resources(api_instance):
     return resources
 
 def get_pod_usage(api_instance, namespace):
-    pods = api_instance.list_namespaced_pod(namespace).items
+    # Placeholder pour obtenir l'utilisation des ressources des pods (à implémenter selon vos besoins spécifiques)
     pod_usage = {}
+    pods = api_instance.list_namespaced_pod(namespace).items
     for pod in pods:
         pod_name = pod.metadata.name
-        metrics = api_instance.read_namespaced_pod_status(pod_name, namespace)
         # Supposez que vous avez une méthode pour obtenir l'utilisation des ressources du pod
         cpu_usage = 0  # Remplacez par l'utilisation réelle du CPU
         memory_usage = 0  # Remplacez par l'utilisation réelle de la mémoire
