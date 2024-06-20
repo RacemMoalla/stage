@@ -52,23 +52,13 @@ def parse_memory_quantity(quantity):
         raise ValueError(f"Unsupported memory unit: {quantity}")
 
 def get_pod_usage(api_instance, namespace):
-    pod_usage = {}
-    pods = api_instance.list_namespaced_pod(namespace).items
-    for pod in pods:
-        pod_name = pod.metadata.name
-        try:
-            # Récupère les métriques des ressources du pod
-            metrics = api_instance.read_namespaced_pod_metrics(name=pod_name, namespace=namespace)
-            if metrics and metrics.containers:
-                cpu_usage = metrics.containers[0].usage['cpu']
-                memory_usage = metrics.containers[0].usage['memory']
-                pod_usage[pod_name] = {
-                    'cpu_usage': cpu_usage,
-                    'memory_usage': memory_usage
-                }
-        except ApiException as e:
-            print(f"Exception when calling Metrics API for pod {pod_name}: {e}")
-    return pod_usage
+    pods = api_instance.list_namespaced_pod(namespace)
+    for pod in pods.items:
+        if pod.metadata.name == pod_name:
+            # Here you can access pod usage metrics if they are available in the pod status
+            print(f"Pod CPU usage: {pod.status.container_statuses[0].usage.cpu}")
+            print(f"Pod Memory usage: {pod.status.container_statuses[0].usage.memory}")
+
 
 def check_migration_needed(pod_usage, node_resources):
     for pod_name, usage in pod_usage.items():
@@ -107,14 +97,11 @@ def main(namespace, pod_name, jenkins_url):
     except ApiException as ex:
         print(f"Exception when calling Kubernetes API: {ex}")
 
-if __name__ == "__main__":
-    # Récupère les arguments du script depuis l'environnement
-    namespace = os.getenv('NAMESPACE', 'default')
-    pod_name = os.getenv('POD_NAME', 'my-pod')
-    jenkins_url = os.getenv('JENKINS_URL', 'http://your-jenkins-url')
+def get_pod_usage(api_instance, namespace):
+    pods = api_instance.list_namespaced_pod(namespace)
+    for pod in pods.items:
+        if pod.metadata.name == pod_name:
+            # Here you can access pod usage metrics if they are available in the pod status
+            print(f"Pod CPU usage: {pod.status.container_statuses[0].usage.cpu}")
+            print(f"Pod Memory usage: {pod.status.container_statuses[0].usage.memory}")
 
-    print(f"Namespace: {namespace}")
-    print(f"Pod Name: {pod_name}")
-    print(f"Jenkins URL: {jenkins_url}")
-
-    main(namespace, pod_name, jenkins_url)
