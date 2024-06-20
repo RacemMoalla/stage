@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_SCRIPT = 'monitor.py'
         NAMESPACE = 'default'
         POD_NAME = 'podmigration-testapp-64fbc98b-hj8z9'
         JENKINS_URL = 'http://34.163.186.12:8080'
@@ -25,16 +24,11 @@ pipeline {
         }
 
         stage('Run Monitor Script') {
-            environment {
-                KUBE_CONFIG_PATH_EU = credentials('kub-eu')  // Référence à vos informations d'identification Kubernetes
-            }
             steps {
                 script {
-                    sh "chmod +x ${env.PYTHON_SCRIPT}"
-                    withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                        def scriptOutput = sh(script: "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU}", returnStdout: true)
-                        echo scriptOutput.trim()
-                    }
+                    sh "chmod +x monitor.py"
+                    def scriptOutput = sh(script: "./venv/bin/python monitor.py ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL}", returnStdout: true).trim()
+                    echo scriptOutput
                 }
             }
         }
