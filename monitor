@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_SCRIPT = '/path/to/monitor_and_migrate.py'
+        PYTHON_SCRIPT = 'monitor.py'
         NAMESPACE = 'default'
-        POD_NAME = 'my-pod'
-        JENKINS_URL = 'http://your-jenkins-url'
+        POD_NAME = 'podmigration-testapp-64fbc98b-hj8z9'
+        JENKINS_URL = 'http://34.163.186.12:8080/'
         KUBE_CONFIG_PATH_EU = credentials('kub-eu')
         KUBE_CONFIG_PATH_NA = credentials('kub-na')
     }
