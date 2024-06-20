@@ -1,16 +1,18 @@
+import os
 import time
 import requests
-import subprocess
-import sys
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 
-# Configurez les seuils pour les décisions de migration
+# Seuils pour la décision de migration
 CPU_USAGE_THRESHOLD = 0.75  # 75%
 MEMORY_USAGE_THRESHOLD = 0.75  # 75%
 SLEEP_INTERVAL = 60  # Intervalle de surveillance en secondes
 
 def get_kube_client(config_file):
+    # Charge la configuration Kubernetes à partir du fichier fourni
     config.load_kube_config(config_file=config_file)
+    # Crée une instance de l'API Kubernetes
     return client.CoreV1Api()
 
 def get_node_resources(api_instance):
@@ -32,28 +34,43 @@ def get_node_resources(api_instance):
     return resources
 
 def get_pod_usage(api_instance, namespace):
-    # Placeholder pour obtenir l'utilisation des ressources des pods (à implémenter selon vos besoins spécifiques)
     pod_usage = {}
     pods = api_instance.list_namespaced_pod(namespace).items
     for pod in pods:
         pod_name = pod.metadata.name
-        # Supposez que vous avez une méthode pour obtenir l'utilisation des ressources du pod
-        cpu_usage = 0  # Remplacez par l'utilisation réelle du CPU
-        memory_usage = 0  # Remplacez par l'utilisation réelle de la mémoire
-
-        pod_usage[pod_name] = {
-            'cpu_usage': cpu_usage,
-            'memory_usage': memory_usage
-        }
+        try:
+            # Récupère les métriques des ressources du pod
+            metrics = api_instance.read_namespaced_pod_metrics(name=pod_name, namespace=namespace)
+            if metrics and metrics.containers:
+                cpu_usage = metrics.containers[0].usage['cpu']
+                memory_usage = metrics.containers[0].usage['memory']
+                pod_usage[pod_name] = {
+                    'cpu_usage': cpu_usage,
+                    'memory_usage': memory_usage
+                }
+        except ApiException as e:
+            print(f"Exception when calling Metrics API for pod {pod_name}: {e}")
     return pod_usage
 
 def check_migration_needed(pod_usage, node_resources):
     for pod_name, usage in pod_usage.items():
         for node_name, resources in node_resources.items():
-            if (usage['cpu_usage'] / resources['cpu_capacity'] > CPU_USAGE_THRESHOLD or
-                    usage['memory_usage'] / resources['memory_capacity'] > MEMORY_USAGE_THRESHOLD):
+            if (parse_cpu_quantity(usage['cpu_usage']) / resources['cpu_capacity'] > CPU_USAGE_THRESHOLD or
+                    parse_memory_quantity(usage['memory_usage']) / resources['memory_capacity'] > MEMORY_USAGE_THRESHOLD):
                 return True
     return False
+
+def parse_cpu_quantity(quantity):
+    if quantity.endswith('m'):
+        return float(quantity[:-1]) / 1000  # Converti milli-CPU en CPU
+    return float(quantity)
+
+def parse_memory_quantity(quantity):
+    if quantity.endswith('Mi'):
+        return float(quantity[:-2])
+    if quantity.endswith('Gi'):
+        return float(quantity[:-2]) * 1024  # Converti Gio en Mio
+    return float(quantity)
 
 def trigger_migration(jenkins_url, pipeline_name):
     url = f"{jenkins_url}/job/{pipeline_name}/build"
@@ -63,43 +80,35 @@ def trigger_migration(jenkins_url, pipeline_name):
     else:
         print(f"Failed to trigger migration for {pipeline_name}. Status code: {response.status_code}")
 
-def node_pingable(node_ip):
-    response = subprocess.run(['ping', '-c', '1', node_ip], stdout=subprocess.PIPE)
-    return response.returncode == 0
+def main(namespace, pod_name, jenkins_url, kube_config_path_eu):
+    try:
+        # Initialise le client Kubernetes avec le fichier de configuration
+        eu_api = get_kube_client(kube_config_path_eu)
 
-def main(namespace, pod_name, jenkins_url, kube_config_path_eu, kube_config_path_na):
-    # Initialisation des clients Kubernetes pour chaque cluster
-    eu_api = get_kube_client(kube_config_path_eu)
-    na_api = get_kube_client(kube_config_path_na)
-    
-    while True:
-        # Surveillance des ressources dans le cluster EU
-        print("Checking resources in EU cluster...")
-        eu_node_resources = get_node_resources(eu_api)
-        eu_pod_usage = get_pod_usage(eu_api, namespace)
-        if check_migration_needed(eu_pod_usage, eu_node_resources):
-            print("High resource usage detected in EU cluster, triggering migration to NA...")
-            trigger_migration(jenkins_url, 'migration-eu-na')
-        
-        # Surveillance des ressources dans le cluster NA
-        print("Checking resources in NA cluster...")
-        na_node_resources = get_node_resources(na_api)
-        na_pod_usage = get_pod_usage(na_api, namespace)
-        if check_migration_needed(na_pod_usage, na_node_resources):
-            print("High resource usage detected in NA cluster, triggering migration to EU...")
-            trigger_migration(jenkins_url, 'migration-na-eu')
+        while True:
+            # Surveillance des ressources du cluster EU
+            print("Checking resources in EU cluster...")
+            eu_node_resources = get_node_resources(eu_api)
+            eu_pod_usage = get_pod_usage(eu_api, namespace)
+            if check_migration_needed(eu_pod_usage, eu_node_resources):
+                print("High resource usage detected in EU cluster, triggering migration to NA...")
+                trigger_migration(jenkins_url, 'migration-eu-na')
 
-        time.sleep(SLEEP_INTERVAL)
+            time.sleep(SLEEP_INTERVAL)
+
+    except ApiException as ex:
+        print(f"Exception when calling Kubernetes API: {ex}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
-        print("Usage: python3 monitor_and_migrate.py <namespace> <pod_name> <jenkins_url> <kube_config_path_eu> <kube_config_path_na>")
-        sys.exit(1)
+    # Récupère les arguments du script depuis l'environnement
+    namespace = os.getenv('NAMESPACE', 'default')
+    pod_name = os.getenv('POD_NAME', 'my-pod')
+    jenkins_url = os.getenv('JENKINS_URL', 'http://your-jenkins-url')
+    kube_config_path_eu = os.getenv('KUBE_CONFIG_PATH_EU')
 
-    namespace = sys.argv[1]
-    pod_name = sys.argv[2]
-    jenkins_url = sys.argv[3]
-    kube_config_path_eu = sys.argv[4]
-    kube_config_path_na = sys.argv[5]
+    print(f"Namespace: {namespace}")
+    print(f"Pod Name: {pod_name}")
+    print(f"Jenkins URL: {jenkins_url}")
+    print(f"Kube Config Path EU: {kube_config_path_eu}")
 
-    main(namespace, pod_name, jenkins_url, kube_config_path_eu, kube_config_path_na)
+    main(namespace, pod_name, jenkins_url, kube_config_path_eu)
