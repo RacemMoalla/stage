@@ -32,8 +32,8 @@ pipeline {
                 script {
                     sh "chmod +x ${env.PYTHON_SCRIPT}"
                     withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                        def scriptOutput = sh(returnStdout: true, script: "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU}")
-                        echo scriptOutput
+                        def scriptOutput = sh(script: "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU}", returnStdout: true)
+                        echo scriptOutput.trim()
                     }
                 }
             }
