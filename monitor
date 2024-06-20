@@ -5,9 +5,7 @@ pipeline {
         PYTHON_SCRIPT = 'monitor.py'
         NAMESPACE = 'default'
         POD_NAME = 'podmigration-testapp-64fbc98b-hj8z9'
-        JENKINS_URL = 'http://34.163.186.12:8080/'
-        KUBE_CONFIG_PATH_EU = credentials('kub-eu')
-        KUBE_CONFIG_PATH_NA = credentials('kube-na')
+        JENKINS_URL = 'http://34.163.186.12:8080'
     }
 
     stages {
@@ -16,15 +14,30 @@ pipeline {
                 git url: 'https://github.com/RacemMoalla/stage.git', branch: 'main'
             }
         }
-        stage('Run Monitor Script') {
+
+        stage('Install Python Dependencies') {
             steps {
                 script {
-                    // Assurez-vous que le script Python est exécutable
+                    sh 'python3 -m venv venv'
+                    sh './venv/bin/pip install -r requirements.txt'
+                }
+            }
+        }
+
+        stage('Run Monitor Script') {
+            environment {
+                KUBE_CONFIG_PATH_EU = credentials('kub-eu')
+            }
+            steps {
+                script {
                     sh "chmod +x ${env.PYTHON_SCRIPT}"
-                    // Exécutez le script Python avec les arguments nécessaires
-                    sh "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU} ${env.KUBE_CONFIG_PATH_NA}"
+                    withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                        sh "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL}"
+                    }
                 }
             }
         }
     }
+
+
 }
