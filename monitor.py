@@ -9,9 +9,9 @@ CPU_USAGE_THRESHOLD = 0.75  # 75%
 MEMORY_USAGE_THRESHOLD = 0.75  # 75%
 SLEEP_INTERVAL = 60  # Intervalle de surveillance en secondes
 
-def get_kube_client(config_file):
-    # Charge la configuration Kubernetes à partir du fichier fourni
-    config.load_kube_config(config_file=config_file)
+def get_kube_client():
+    # Charge la configuration Kubernetes du contexte par défaut
+    config.load_kube_config()
     # Crée une instance de l'API Kubernetes
     return client.CoreV1Api()
 
@@ -80,19 +80,19 @@ def trigger_migration(jenkins_url, pipeline_name):
     else:
         print(f"Failed to trigger migration for {pipeline_name}. Status code: {response.status_code}")
 
-def main(namespace, pod_name, jenkins_url, kube_config_path_eu):
+def main(namespace, pod_name, jenkins_url):
     try:
-        # Initialise le client Kubernetes avec le fichier de configuration
-        eu_api = get_kube_client(kube_config_path_eu)
+        # Initialise le client Kubernetes avec le contexte par défaut
+        api = get_kube_client()
 
         while True:
-            # Surveillance des ressources du cluster EU
-            print("Checking resources in EU cluster...")
-            eu_node_resources = get_node_resources(eu_api)
-            eu_pod_usage = get_pod_usage(eu_api, namespace)
-            if check_migration_needed(eu_pod_usage, eu_node_resources):
-                print("High resource usage detected in EU cluster, triggering migration to NA...")
-                trigger_migration(jenkins_url, 'migration-eu-na')
+            # Surveillance des ressources du cluster
+            print("Checking resources in the cluster...")
+            node_resources = get_node_resources(api)
+            pod_usage = get_pod_usage(api, namespace)
+            if check_migration_needed(pod_usage, node_resources):
+                print("High resource usage detected, triggering migration...")
+                trigger_migration(jenkins_url, 'migration-job')
 
             time.sleep(SLEEP_INTERVAL)
 
@@ -104,11 +104,9 @@ if __name__ == "__main__":
     namespace = os.getenv('NAMESPACE', 'default')
     pod_name = os.getenv('POD_NAME', 'my-pod')
     jenkins_url = os.getenv('JENKINS_URL', 'http://your-jenkins-url')
-    kube_config_path_eu = os.getenv('KUBE_CONFIG_PATH_EU')
 
     print(f"Namespace: {namespace}")
     print(f"Pod Name: {pod_name}")
     print(f"Jenkins URL: {jenkins_url}")
-    print(f"Kube Config Path EU: {kube_config_path_eu}")
 
-    main(namespace, pod_name, jenkins_url, kube_config_path_eu)
+    main(namespace, pod_name, jenkins_url)
