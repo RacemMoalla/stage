@@ -2,10 +2,12 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_SCRIPT = 'monitor.py'
+        PYTHON_SCRIPT = '/path/to/monitor_and_migrate.py'
         NAMESPACE = 'default'
         POD_NAME = 'my-pod'
         JENKINS_URL = 'http://your-jenkins-url'
+        KUBE_CONFIG_PATH_EU = credentials('kub-eu')
+        KUBE_CONFIG_PATH_NA = credentials('kub-na')
     }
 
     stages {
@@ -15,7 +17,7 @@ pipeline {
                     // Assurez-vous que le script Python est exécutable
                     sh "chmod +x ${env.PYTHON_SCRIPT}"
                     // Exécutez le script Python avec les arguments nécessaires
-                    sh "python3 ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL}"
+                    sh "python3 ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU} ${env.KUBE_CONFIG_PATH_NA}"
                 }
             }
         }
