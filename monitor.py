@@ -14,7 +14,6 @@ def get_kube_client():
     config.load_kube_config()
     # Crée une instance de l'API Kubernetes
     return client.CoreV1Api()
-
 def get_node_resources(api_instance):
     nodes = api_instance.list_node().items
     resources = {}
@@ -22,8 +21,10 @@ def get_node_resources(api_instance):
         node_name = node.metadata.name
         cpu_capacity = int(node.status.capacity['cpu'])
         memory_capacity = int(node.status.capacity['memory'][:-2])  # Converti en Mi
-        cpu_allocatable = int(node.status.allocatable['cpu'])
-        memory_allocatable = int(node.status.allocatable['memory'][:-2])  # Converti en Mi
+        
+        # Converti les allocations CPU et mémoire en Mi, si nécessaire
+        cpu_allocatable = parse_cpu_quantity(node.status.allocatable['cpu'])
+        memory_allocatable = parse_memory_quantity(node.status.allocatable['memory'])
 
         resources[node_name] = {
             'cpu_capacity': cpu_capacity,
@@ -32,6 +33,18 @@ def get_node_resources(api_instance):
             'memory_allocatable': memory_allocatable
         }
     return resources
+
+def parse_cpu_quantity(quantity):
+    if quantity.endswith('m'):
+        return float(quantity[:-1]) / 1000  # Converti milli-CPU en CPU
+    return float(quantity)
+
+def parse_memory_quantity(quantity):
+    if quantity.endswith('Mi'):
+        return float(quantity[:-2])
+    if quantity.endswith('Gi'):
+        return float(quantity[:-2]) * 1024  # Converti Gio en Mio
+    return float(quantity)
 
 def get_pod_usage(api_instance, namespace):
     pod_usage = {}
@@ -60,17 +73,7 @@ def check_migration_needed(pod_usage, node_resources):
                 return True
     return False
 
-def parse_cpu_quantity(quantity):
-    if quantity.endswith('m'):
-        return float(quantity[:-1]) / 1000  # Converti milli-CPU en CPU
-    return float(quantity)
 
-def parse_memory_quantity(quantity):
-    if quantity.endswith('Mi'):
-        return float(quantity[:-2])
-    if quantity.endswith('Gi'):
-        return float(quantity[:-2]) * 1024  # Converti Gio en Mio
-    return float(quantity)
 
 def trigger_migration(jenkins_url, pipeline_name):
     url = f"{jenkins_url}/job/{pipeline_name}/build"
