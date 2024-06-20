@@ -97,11 +97,4 @@ def main(namespace, pod_name, jenkins_url):
     except ApiException as ex:
         print(f"Exception when calling Kubernetes API: {ex}")
 
-def get_pod_usage(api_instance, namespace):
-    pods = api_instance.list_namespaced_pod(namespace)
-    for pod in pods.items:
-        if pod.metadata.name == pod_name:
-            # Here you can access pod usage metrics if they are available in the pod status
-            print(f"Pod CPU usage: {pod.status.container_statuses[0].usage.cpu}")
-            print(f"Pod Memory usage: {pod.status.container_statuses[0].usage.memory}")
 
