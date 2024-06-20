@@ -29,8 +29,5 @@ pipeline {
         }
     }
 
-    triggers {
-        // Planification pour exécuter ce job toutes les minutes
-        cron('*/1 * * * *')
-    }
+
 }
