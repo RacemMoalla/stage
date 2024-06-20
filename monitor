@@ -11,36 +11,20 @@ pipeline {
     }
 
     stages {
-        stage('Setup Python Environment') {
+        stage('Checkout SCM') {
             steps {
-                script {
-                    // Créer l'environnement virtuel si non existant
-                    sh """
-                    if [ ! -d "${env.VENV_PATH}" ]; then
-                        python3 -m venv ${env.VENV_PATH}
-                    fi
-                    """
-                    // Activer l'environnement virtuel et installer les dépendances
-                    sh """
-                    source ${env.VENV_PATH}/bin/activate
-                    pip install requests kubernetes
-                    """
-                }
+                git url: 'https://github.com/RacemMoalla/stage.git', branch: 'main'
             }
         }
-
         stage('Run Monitor Script') {
             steps {
                 script {
-                    // Exécuter le script Python avec l'environnement virtuel activé
-                    sh """
-                    source ${env.VENV_PATH}/bin/activate
-                    chmod +x ${env.PYTHON_SCRIPT}
-                    python3 ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_NA} ${env.KUBE_CONFIG_PATH_EU}
-                    """
+                    // Assurez-vous que le script Python est exécutable
+                    sh "chmod +x ${env.PYTHON_SCRIPT}"
+                    // Exécutez le script Python avec les arguments nécessaires
+                    sh "./venv/bin/python ${env.PYTHON_SCRIPT} ${env.NAMESPACE} ${env.POD_NAME} ${env.JENKINS_URL} ${env.KUBE_CONFIG_PATH_EU} ${env.KUBE_CONFIG_PATH_NA}"
                 }
             }
         }
     }
-
 }
