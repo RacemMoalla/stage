@@ -20,34 +20,33 @@ pipeline {
         }
 
         stage('Check Resource Usage and Trigger Migration') {
-            // Déclencher toutes les 3 minutes (H/3 * * * *)
-            // Adapté à votre besoin de vérification périodique
-            when {
-                cron('H/3 * * * *')
-            }
             steps {
                 script {
-                    withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                        def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
-                        println(resourceStatus)
+                    while (true) {
+                        // Vérification toutes les 3 minutes
+                        sleep time: 180, unit: 'SECONDS'
 
-                        def lines = resourceStatus.split('\n')
-                        def usageExceeded = false
-                        lines.each { line ->
-                            def parts = line.split()
-                            if (parts[0] != 'NAME' && parts.size() >= 4) {
-                                def cpuUsage = parts[1].replace('%','').toInteger()
-                                def memoryUsage = parts[2].replace('%','').toInteger()
-                                if (cpuUsage > 80 || memoryUsage > 80) {
-                                    usageExceeded = true
+                        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                            def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
+                            println(resourceStatus)
+
+                            def lines = resourceStatus.split('\n')
+                            def usageExceeded = false
+                            lines.each { line ->
+                                def parts = line.split()
+                                if (parts[0] != 'NAME' && parts.size() >= 4) {
+                                    def cpuUsage = parts[1].replace('%','').toInteger()
+                                    def memoryUsage = parts[2].replace('%','').toInteger()
+                                    if (cpuUsage > 80 || memoryUsage > 80) {
+                                        usageExceeded = true
+                                    }
                                 }
                             }
-                        }
 
-                        if (usageExceeded) {
-                            env.TRIGGER_MIGRATION = 'true'
-                        } else {
-                            env.TRIGGER_MIGRATION = 'false'
+                            if (usageExceeded) {
+                                env.TRIGGER_MIGRATION = 'true'
+                                break // Sortir de la boucle infinie si la migration est déclenchée
+                            }
                         }
                     }
                 }
