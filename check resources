@@ -23,8 +23,8 @@ pipeline {
             steps {
                 script {
                     while (true) {
-                        // Vérification toutes les 3 minutes
-                        sleep time: 180, unit: 'SECONDS'
+                        // Vérification toutes les 1 minute
+                        sleep time: 60, unit: 'SECONDS'
 
                         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
                             def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
@@ -37,6 +37,7 @@ pipeline {
                                 if (parts[0] != 'NAME' && parts.size() >= 4) {
                                     def cpuUsage = parts[1].replace('%','').toInteger()
                                     def memoryUsage = parts[2].replace('%','').toInteger()
+                                    println "Pod ${parts[0]}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
                                     if (cpuUsage > 80 || memoryUsage > 80) {
                                         usageExceeded = true
                                     }
