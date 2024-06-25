@@ -135,8 +135,8 @@ def checkNodeResourceUsage() {
                 if (line.contains('gke-cluster-eu-default-pool-a69f98b2-ksml')) {
                     def parts = line.split()
                     if (parts.size() >= 5) {
-                        def cpuUsage = parts[1].replace('%','').toInteger()
-                        def memoryUsage = parts[3].replace('%','').toInteger()
+                        def cpuUsage = extractNumericValue(parts[1])
+                        def memoryUsage = extractNumericValue(parts[3])
                         echo "Node gke-cluster-eu-default-pool-a69f98b2-ksml: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
 
                         if (cpuUsage > 80 || memoryUsage > 80) {
@@ -154,3 +154,10 @@ def checkNodeResourceUsage() {
 
     return false
 }
+
+def extractNumericValue(valueString) {
+    // Function to extract numeric value from a string
+    def numericValue = valueString.replaceAll(/[^0-9.]/, '')
+    return numericValue.toDouble()
+}
+
