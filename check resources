@@ -42,7 +42,7 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
                     sh './kubectl get deployment decision-service -o yaml > deployment.yaml'
-                    sh './kubectl get service decision-service-service -o yaml > service.yaml'
+                    sh './kubectl get service decision-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
                 }
             }
