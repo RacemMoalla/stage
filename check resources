@@ -13,7 +13,7 @@ pipeline {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
-                    sh './kubectl get pods'
+                    sh './kubectl get pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-a69f98b2-ksml'
                     sh './kubectl get services'
                 }
             }
@@ -40,8 +40,8 @@ pipeline {
             }
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    sh './kubectl get deployment podmigration-testapp -o yaml > deployment.yaml'
-                    sh './kubectl get service podmigration-testapp-service -o yaml > service.yaml'
+                    sh './kubectl get deployment decision-service -o yaml > deployment.yaml'
+                    sh './kubectl get service decision-service-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
                 }
             }
@@ -125,7 +125,7 @@ def checkResourceUsage() {
         def usageExceeded = false
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-            def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
+            def resourceStatus = sh(script: './kubectl top pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-a69f98b2-ksml', returnStdout: true).trim()
 
             def lines = resourceStatus.split('\n')
             lines.each { line ->
