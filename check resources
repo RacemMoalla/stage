@@ -10,7 +10,7 @@ pipeline {
         stage('Integrate with Source k8s (EU)') {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
                     sh './kubectl get pods'
@@ -26,6 +26,9 @@ pipeline {
 
                     if (usageExceeded) {
                         env.TRIGGER_MIGRATION = 'true'
+                        echo 'Migration triggered due to resource usage exceeding thresholds.'
+                    } else {
+                        echo 'No migration triggered.'
                     }
                 }
             }
@@ -50,15 +53,12 @@ pipeline {
             }
             steps {
                 script {
-                    // Appel du script Python pour modifier le YAML
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
                     def nodeParam = 'gke-cluster-na-default-pool-a0083f06-2htb' // Nouveau nom de nœud en NA
 
-                    // Assurez-vous que le script Python est accessible depuis Jenkins
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
-                    // Archivage du fichier modifié pour utilisation ultérieure
                     archiveArtifacts artifacts: 'deployment_modified.yaml', allowEmptyArchive: true
                 }
             }
@@ -70,7 +70,7 @@ pipeline {
             }
             steps {
                 withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
-                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
+                    sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
                 }
@@ -83,10 +83,7 @@ pipeline {
             }
             steps {
                 withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
-                    // Assurez-vous que les fichiers sont disponibles avant de les appliquer
                     sh 'ls -l deployment_modified.yaml service.yaml'
-
-                    // Appliquer les fichiers YAML modifiés
                     sh './kubectl apply -f deployment_modified.yaml'
                     sh './kubectl apply -f service.yaml'
                 }
@@ -99,7 +96,6 @@ pipeline {
             }
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                    // Supprimer les anciens déploiement et service
                     sh './kubectl delete deployment podmigration-testapp'
                     sh './kubectl delete service podmigration-testapp-service'
                 }
@@ -112,9 +108,9 @@ pipeline {
             node('') {
                 script {
                     if (env.TRIGGER_MIGRATION == 'true') {
-                        echo 'Migration triggered due to resource usage exceeding thresholds.'
+                        echo 'Migration completed successfully.'
                     } else {
-                        echo 'No migration triggered.'
+                        echo 'No migration performed.'
                     }
                 }
             }
@@ -124,14 +120,12 @@ pipeline {
 
 def checkResourceUsage() {
     while (true) {
-        // Vérification toutes les 1 minute
         sleep time: 60, unit: 'SECONDS'
 
         def usageExceeded = false
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
             def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
-            println(resourceStatus)
 
             def lines = resourceStatus.split('\n')
             lines.each { line ->
