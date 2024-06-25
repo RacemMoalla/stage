@@ -22,33 +22,10 @@ pipeline {
         stage('Check Resource Usage and Trigger Migration') {
             steps {
                 script {
-                    while (true) {
-                        // Vérification toutes les 1 minute
-                        sleep time: 60, unit: 'SECONDS'
+                    def usageExceeded = checkResourceUsage()
 
-                        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-                            def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
-                            println(resourceStatus)
-
-                            def lines = resourceStatus.split('\n')
-                            def usageExceeded = false
-                            lines.each { line ->
-                                def parts = line.split()
-                                if (parts[0] != 'NAME' && parts.size() >= 4) {
-                                    def cpuUsage = parts[1].replace('%','').toInteger()
-                                    def memoryUsage = parts[2].replace('%','').toInteger()
-                                    println "Pod ${parts[0]}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
-                                    if (cpuUsage > 80 || memoryUsage > 80) {
-                                        usageExceeded = true
-                                    }
-                                }
-                            }
-
-                            if (usageExceeded) {
-                                env.TRIGGER_MIGRATION = 'true'
-                                break // Sortir de la boucle infinie si la migration est déclenchée
-                            }
-                        }
+                    if (usageExceeded) {
+                        env.TRIGGER_MIGRATION = 'true'
                     }
                 }
             }
@@ -129,4 +106,51 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            node('') {
+                script {
+                    if (env.TRIGGER_MIGRATION == 'true') {
+                        echo 'Migration triggered due to resource usage exceeding thresholds.'
+                    } else {
+                        echo 'No migration triggered.'
+                    }
+                }
+            }
+        }
+    }
+}
+
+def checkResourceUsage() {
+    while (true) {
+        // Vérification toutes les 1 minute
+        sleep time: 60, unit: 'SECONDS'
+
+        def usageExceeded = false
+
+        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+            def resourceStatus = sh(script: './kubectl top pods', returnStdout: true).trim()
+            println(resourceStatus)
+
+            def lines = resourceStatus.split('\n')
+            lines.each { line ->
+                def parts = line.split()
+                if (parts[0] != 'NAME' && parts.size() >= 4) {
+                    def cpuUsage = parts[1].replace('%','').toInteger()
+                    def memoryUsage = parts[2].replace('%','').toInteger()
+                    println "Pod ${parts[0]}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+                    if (cpuUsage > 80 || memoryUsage > 80) {
+                        usageExceeded = true
+                    }
+                }
+            }
+        }
+
+        if (usageExceeded) {
+            return true
+        }
+    }
+
+    return false
 }
