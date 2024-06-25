@@ -127,20 +127,18 @@ def checkNodeResourceUsage() {
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
             def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml", returnStdout: true).trim()
-            sh './kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml'
-            echo "Output of kubectl top node:"
-            sh './kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml'
             echo "Node Status:"
             echo nodeStatus
 
-            def lines = nodeStatus.split('\n')
+            def lines = nodeStatus.readLines()
             lines.each { line ->
-                if (line.startsWith('gke-cluster-eu-default-pool-a69f98b2-ksml')) {
+                if (line.contains('gke-cluster-eu-default-pool-a69f98b2-ksml')) {
                     def parts = line.split()
-                    if (parts.size() >= 6) {
+                    if (parts.size() >= 5) {
                         def cpuUsage = parts[1].replace('%','').toInteger()
                         def memoryUsage = parts[3].replace('%','').toInteger()
-                        echo "Node ${nodeName}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+                        echo "Node gke-cluster-eu-default-pool-a69f98b2-ksml: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+
                         if (cpuUsage > 80 || memoryUsage > 80) {
                             usageExceeded = true
                         }
