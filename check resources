@@ -127,6 +127,11 @@ def checkNodeResourceUsage() {
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
             def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml", returnStdout: true).trim()
+            sh './kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml'
+            echo "Output of kubectl top node:"
+            sh './kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml'
+            echo "Node Status:"
+            echo nodeStatus
 
             def lines = nodeStatus.split('\n')
             lines.each { line ->
