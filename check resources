@@ -13,6 +13,7 @@ pipeline {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
+                    sh "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml"
                     sh './kubectl get pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-a69f98b2-ksml'
                     sh './kubectl get services'
                 }
@@ -22,7 +23,7 @@ pipeline {
         stage('Check Resource Usage and Trigger Migration') {
             steps {
                 script {
-                    def usageExceeded = checkResourceUsage()
+                    def usageExceeded = checkNodeResourceUsage()
 
                     if (usageExceeded) {
                         env.TRIGGER_MIGRATION = 'true'
@@ -118,24 +119,26 @@ pipeline {
     }
 }
 
-def checkResourceUsage() {
+def checkNodeResourceUsage() {
     while (true) {
         sleep time: 60, unit: 'SECONDS'
 
         def usageExceeded = false
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-            def resourceStatus = sh(script: './kubectl top pods --no-headers', returnStdout: true).trim()
+            def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml", returnStdout: true).trim()
 
-            def lines = resourceStatus.split('\n')
+            def lines = nodeStatus.split('\n')
             lines.each { line ->
-                def parts = line.split()
-                if (parts.size() >= 4) {
-                    def cpuUsage = parts[1].replace('%','').toInteger()
-                    def memoryUsage = parts[2].replace('%','').toInteger()
-                    println "Pod ${parts[0]}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
-                    if (cpuUsage > 80 || memoryUsage > 80) {
-                        usageExceeded = true
+                if (line.startsWith('gke-cluster-eu-default-pool-a69f98b2-ksml')) {
+                    def parts = line.split()
+                    if (parts.size() >= 6) {
+                        def cpuUsage = parts[1].replace('%','').toInteger()
+                        def memoryUsage = parts[3].replace('%','').toInteger()
+                        println "Node gke-cluster-eu-default-pool-a69f98b2-ksml: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+                        if (cpuUsage > 80 || memoryUsage > 80) {
+                            usageExceeded = true
+                        }
                     }
                 }
             }
