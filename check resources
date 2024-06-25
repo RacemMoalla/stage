@@ -125,12 +125,12 @@ def checkResourceUsage() {
         def usageExceeded = false
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
-            def resourceStatus = sh(script: './kubectl top pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-a69f98b2-ksml', returnStdout: true).trim()
+            def resourceStatus = sh(script: './kubectl top pods --no-headers', returnStdout: true).trim()
 
             def lines = resourceStatus.split('\n')
             lines.each { line ->
                 def parts = line.split()
-                if (parts[0] != 'NAME' && parts.size() >= 4) {
+                if (parts.size() >= 4) {
                     def cpuUsage = parts[1].replace('%','').toInteger()
                     def memoryUsage = parts[2].replace('%','').toInteger()
                     println "Pod ${parts[0]}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
