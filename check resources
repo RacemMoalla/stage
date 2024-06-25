@@ -135,7 +135,7 @@ def checkNodeResourceUsage() {
                     if (parts.size() >= 6) {
                         def cpuUsage = parts[1].replace('%','').toInteger()
                         def memoryUsage = parts[3].replace('%','').toInteger()
-                        println "Node gke-cluster-eu-default-pool-a69f98b2-ksml: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+                        echo "Node ${nodeName}: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
                         if (cpuUsage > 80 || memoryUsage > 80) {
                             usageExceeded = true
                         }
