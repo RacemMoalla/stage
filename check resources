@@ -109,14 +109,14 @@ pipeline {
                             echo "External IP of decision-service: ${externalIP}"
                         }
 
-                        if (externalIP == null) {
+                        if (externalIP == null || externalIP=='') {
                             echo "Waiting for external IP to be assigned..."
                             sleep sleepTime
                             attempts++
                         }
                     }
 
-                    if (externalIP != null) {
+                    if (externalIP != null && externalIP=='') {
                         // Construct the API URL and payload
                         def payload = "{\"updatedIP\": \"${externalIP}\"}"
 
