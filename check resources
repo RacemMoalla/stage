@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Integrate with Source k8s (EU)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -40,7 +40,7 @@ pipeline {
                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh './kubectl get deployment decision-service -o yaml > deployment.yaml'
                     sh './kubectl get service decision-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
@@ -70,7 +70,7 @@ pipeline {
                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -83,7 +83,7 @@ pipeline {
                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                     sh 'ls -l deployment_modified.yaml service.yaml'
                     sh './kubectl apply -f deployment_modified.yaml'
                     sh './kubectl apply -f service.yaml'
@@ -96,7 +96,7 @@ pipeline {
                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh './kubectl delete deployment decision-service'
                     sh './kubectl delete service decision-service'
                 }
@@ -125,7 +125,7 @@ def checkNodeResourceUsage() {
 
         def usageExceeded = false
 
-        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
             def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml", returnStdout: true).trim()
             echo "Node Status:"
             echo nodeStatus
