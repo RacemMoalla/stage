@@ -13,8 +13,8 @@ pipeline {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
-                    sh "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml"
-                    sh './kubectl get pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-a69f98b2-ksml'
+                    sh "./kubectl top node gke-cluster-eu-default-pool-7871b70a-whwk"
+                    sh './kubectl get pods --field-selector spec.nodeName=gke-cluster-eu-default-pool-7871b70a-whwk'
                     sh './kubectl get services'
                 }
             }
@@ -126,18 +126,18 @@ def checkNodeResourceUsage() {
         def usageExceeded = false
 
         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
-            def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-a69f98b2-ksml", returnStdout: true).trim()
+            def nodeStatus = sh(script: "./kubectl top node gke-cluster-eu-default-pool-7871b70a-whwk", returnStdout: true).trim()
             echo "Node Status:"
             echo nodeStatus
 
             def lines = nodeStatus.readLines()
             lines.each { line ->
-                if (line.contains('gke-cluster-eu-default-pool-a69f98b2-ksml')) {
+                if (line.contains('gke-cluster-eu-default-pool-7871b70a-whwk')) {
                     def parts = line.split()
                     if (parts.size() >= 5) {
                         def cpuUsage = extractNumericValue(parts[2])
                         def memoryUsage = extractNumericValue(parts[4])
-                        echo "Node gke-cluster-eu-default-pool-a69f98b2-ksml: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
+                        echo "Node gke-cluster-eu-default-pool-7871b70a-whwk: CPU Usage = ${cpuUsage}%, Memory Usage = ${memoryUsage}%"
 
                         if (cpuUsage > 80 || memoryUsage > 80) {
                             usageExceeded = true
