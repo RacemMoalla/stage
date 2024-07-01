@@ -58,7 +58,7 @@ pipeline {
                     def outputYaml = 'deployment_modified.yaml'
                     def nodeParam = 'gke-cluster-na-default-pool-d1a68db5-4mpl' // Nouveau nom de nœud en NA
 
-                    sh "python mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
+                    sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
                     archiveArtifacts artifacts: 'deployment_modified.yaml', allowEmptyArchive: true
                 }
