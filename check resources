@@ -121,7 +121,7 @@ pipeline {
 
 def checkNodeResourceUsage() {
     while (true) {
-        sleep time: 60, unit: 'SECONDS'
+        sleep time: 20, unit: 'SECONDS'
 
         def usageExceeded = false
 
