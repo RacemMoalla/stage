@@ -97,12 +97,12 @@ pipeline {
             }
             steps {
                 script {
-                    def externalIP = null
+                    def externalIP = ''
                     def attempts = 0
                     def maxAttempts = 5
                     def sleepTime = 30 // seconds
 
-                    while (externalIP == null && attempts < maxAttempts) {
+                    while (externalIP == '' && attempts < maxAttempts) {
                         withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                             // Retrieve external IP of decision-service
                             externalIP = sh(script: './kubectl get service decision-service -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"', returnStdout: true).trim()
