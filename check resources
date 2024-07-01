@@ -90,25 +90,45 @@ pipeline {
                 }
             }
         }
+
         stage('Retrieve External IP and Update via API') {
             when {
                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
                 script {
-                    withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
-                        def externalIP = sh(script: './kubectl get service decision-service -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"', returnStdout: true).trim()
-                        echo "External IP of decision-service: ${externalIP}"
-                        // Construct the API URL with externalIP included in JSON payload
-                        def apiUrl = "http://34.163.16.180 :3000/update-cluster-ip"
-                        def payload = '{"updatedIP": "${externalIP}"}'
+                    def externalIP = null
+                    def attempts = 0
+                    def maxAttempts = 5
+                    def sleepTime = 30 // seconds
+
+                    while (externalIP == null && attempts < maxAttempts) {
+                        withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
+                            // Retrieve external IP of decision-service
+                            externalIP = sh(script: './kubectl get service decision-service -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"', returnStdout: true).trim()
+                            echo "External IP of decision-service: ${externalIP}"
+                        }
+
+                        if (externalIP == null) {
+                            echo "Waiting for external IP to be assigned..."
+                            sleep sleepTime
+                            attempts++
+                        }
+                    }
+
+                    if (externalIP != null) {
+                        // Construct the API URL and payload
+                        def payload = "{\"updatedIP\": \"${externalIP}\"}"
 
                         // Make the API call using curl
-                        sh "curl -X POST ${apiUrl} -H 'Content-Type: application/json' -d '${payload}'"
+                        sh "curl -X POST '${env.API_URL}' -H 'Content-Type: application/json' -d '${payload}'"
+                    } else {
+                        error "Failed to retrieve external IP after ${maxAttempts} attempts"
                     }
                 }
             }
         }
+
 
         stage('Delete Old Deployment and Service from Source (EU)') {
             when {
