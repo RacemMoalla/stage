@@ -116,12 +116,12 @@ pipeline {
                         }
                     }
 
-                    if (externalIP != null && externalIP=='') {
-                        // Construct the API URL and payload
-                        def payload = "{\"updatedIP\": \"${externalIP}\"}"
+                    if (externalIP != null && externalIP!='') {
+                        def apiUrl = "http://localhost:3000/update-cluster-ip"
+                        def payload = '{"updatedIP": "${externalIP}"}'
 
                         // Make the API call using curl
-                        sh "curl -X POST '${env.API_URL}' -H 'Content-Type: application/json' -d '${payload}'"
+                        sh "curl -X POST ${apiUrl} -H 'Content-Type: application/json' -d '${payload}'"
                     } else {
                         error "Failed to retrieve external IP after ${maxAttempts} attempts"
                     }
