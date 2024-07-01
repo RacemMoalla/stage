@@ -99,16 +99,12 @@ pipeline {
                     withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                         def externalIP = sh(script: './kubectl get service decision-service -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"', returnStdout: true).trim()
                         echo "External IP of decision-service: ${externalIP}"
+                        // Construct the API URL with externalIP included in JSON payload
+                        def apiUrl = "http://34.163.16.180 :3000/update-cluster-ip"
+                        def payload = '{"updatedIP": "${externalIP}"}'
 
-                        // Replace the API URL with your actual API endpoint
-                        def apiUrl = "http://your-api-endpoint/update?external_ip=${externalIP}"
-                
-                        // Example: Making a curl request to update via API
-                        sh "curl -X POST ${apiUrl}"
-                
-                        // Alternatively, you can use other tools or scripting languages to make the API call
-                        // For instance, using curl directly within Jenkins pipeline or using HTTP Request plugin
-                        // httpRequest(url: apiUrl, httpMode: 'POST') // Example using HTTP Request plugin
+                        // Make the API call using curl
+                        sh "curl -X POST ${apiUrl} -H 'Content-Type: application/json' -d '${payload}'"
                     }
                 }
             }
