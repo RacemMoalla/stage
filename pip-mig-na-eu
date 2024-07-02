@@ -7,9 +7,9 @@ pipeline {
     }
   
     stages {
-        stage('Integrate with Source k8s (EU)') {
+        stage('Integrate with Source k8s (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -19,11 +19,11 @@ pipeline {
             }
         }
     
-        stage('Export Deployment and Service from Source (EU)') {
+        stage('Export Deployment and Service from Source (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
-                    sh './kubectl get deployment podmigration-testapp -o yaml > deployment.yaml'
-                    sh './kubectl get service podmigration-testapp-service -o yaml > service.yaml'
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
+                    sh './kubectl get deployment decision-service -o yaml > deployment.yaml'
+                    sh './kubectl get service decision-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
                 }
             }
@@ -35,9 +35,8 @@ pipeline {
                     // Appel du script Python pour modifier le YAML
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
-                    def nodeParam = 'gke-cluster-na-default-pool-a0083f06-2htb' // Nouveau nom de nœud en NA
+                    def nodeParam = 'gke-cluster-eu-default-pool-7871b70a-h76h' // Nouveau nom de nœud en eu
 
-                    // Assurez-vous que le script Python est accessible depuis Jenkins
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
                     // Archivage du fichier modifié pour utilisation ultérieure
@@ -46,9 +45,9 @@ pipeline {
             }
         }
     
-        stage('Integrate with Destination k8s (NA)') {
+        stage('Integrate with Destination k8s (eu)') {
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -56,18 +55,19 @@ pipeline {
             }
         }
     
-        stage('Migrate Deployment and Service to Destination (NA)') {
+        stage('Migrate Deployment and Service to Destination (eu)') {
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.51.87') {
-                    // Assurez-vous que les fichiers sont disponibles avant de les appliquer
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh 'ls -l deployment_modified.yaml service.yaml'
-                    
                     // Appliquer les fichiers YAML modifiés
                     sh './kubectl apply -f deployment_modified.yaml'
                     sh './kubectl apply -f service.yaml'
                 }
             }
         }
+
+
+
   stage('Delete Old Deployment and Service from Source (EU)') {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
