@@ -1,11 +1,11 @@
 pipeline {
     agent any
-  
+
     environment {
         KUBE_CONFIG_PATH_EU = credentials('kub-eu')
         KUBE_CONFIG_PATH_NA = credentials('kube-na')
     }
-  
+
     stages {
         stage('Integrate with Source k8s (NA)') {
             steps {
@@ -66,7 +66,6 @@ pipeline {
             }
         }
 
-
         stage('Retrieve External IP and Update via API') {
             steps {
                 script {
@@ -86,17 +85,17 @@ pipeline {
                             echo "Waiting for external IP to be assigned..."
                             sleep sleepTime
                             attempts++
-                            if (attempts==1){
+                            if (attempts == 1) {
                                 sleepTime = 10
                             }
                         }
                     }
 
-                    if (externalIP != null && externalIP!='') {
+                    if (externalIP != null && externalIP != '') {
                         def apiUrl = "http://34.163.16.180:3000/update-cluster-ip"
-                        def payload = "{\"updatedIP\": \"${externalIP}\"}"
+                        def payload = "{\"updatedIP\": \"${externalIP}\", \"apply_delay\": \"1\"}" // Modifier apply_delay à 1
 
-                        // Make the API call using curl
+                        // Effectuer l'appel API avec curl
                         sh "curl -X POST ${apiUrl} -H 'Content-Type: application/json' -d '${payload}'"
                     } else {
                         error "Failed to retrieve external IP after ${maxAttempts} attempts"
@@ -105,8 +104,7 @@ pipeline {
             }
         }
 
-
-  stage('Delete Old Deployment and Service from Source (EU)') {
+        stage('Delete Old Deployment and Service from Source (EU)') {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     // Supprimer les anciens déploiement et service
