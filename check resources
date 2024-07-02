@@ -91,9 +91,9 @@ pipeline {
             }
         }
 
-        stage('Retrieve External IP and Update via API') {
-            when {
-                expression { env.TRIGGER_MIGRATION == 'true' }
+         stage('Retrieve External IP and Update via API') {
+             when {
+                 expression { env.TRIGGER_MIGRATION == 'true' }
             }
             steps {
                 script {
@@ -118,7 +118,7 @@ pipeline {
 
                     if (externalIP != null && externalIP!='') {
                         def apiUrl = "http://34.163.16.180:3000/update-cluster-ip"
-                        def payload = "{\"updatedIP\": \"${externalIP}\"}"
+                        def payload = "{\"updatedIP\": \"${externalIP}\", \"apply_delay\": \"0\"}"
 
                         // Make the API call using curl
                         sh "curl -X POST ${apiUrl} -H 'Content-Type: application/json' -d '${payload}'"
@@ -128,6 +128,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('Delete Old Deployment and Service from Source (EU)') {
