@@ -108,8 +108,8 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     // Supprimer les anciens déploiement et service
-                    sh './kubectl delete deployment podmigration-testapp'
-                    sh './kubectl delete service podmigration-testapp-service'
+                    sh './kubectl delete deployment decision-service'
+                    sh './kubectl delete service decision-service'
                 }
             }
         }
