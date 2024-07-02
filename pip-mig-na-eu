@@ -104,9 +104,9 @@ pipeline {
             }
         }
 
-        stage('Delete Old Deployment and Service from Source (EU)') {
+        stage('Delete Old Deployment and Service from Source (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
                     // Supprimer les anciens déploiement et service
                     sh './kubectl delete deployment decision-service'
                     sh './kubectl delete service decision-service'
