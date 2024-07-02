@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Integrate with Source k8s (EU)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -21,7 +21,7 @@ pipeline {
     
         stage('Export Deployment and Service from Source (EU)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     sh './kubectl get deployment podmigration-testapp -o yaml > deployment.yaml'
                     sh './kubectl get service podmigration-testapp-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
@@ -70,7 +70,7 @@ pipeline {
         }
   stage('Delete Old Deployment and Service from Source (EU)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.30.68') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
                     // Supprimer les anciens déploiement et service
                     sh './kubectl delete deployment podmigration-testapp'
                     sh './kubectl delete service podmigration-testapp-service'
