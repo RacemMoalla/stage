@@ -118,7 +118,7 @@ pipeline {
             script {
                 // Générer un délai de sommeil aléatoire entre 100 et 300 secondes
             def random = new Random()
-            def sleepTime = 100 + random.nextInt(201) // 100 + (0-200) = 100-300
+            def sleepTime = 100 + random.nextInt(201) // 100 + (0-100) = 100-200
 
             // Afficher le délai de sommeil
             echo "Sleeping for ${sleepTime} seconds before triggering 'charge node' job."
