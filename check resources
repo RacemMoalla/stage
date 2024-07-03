@@ -99,8 +99,9 @@ pipeline {
                 script {
                     def externalIP = ''
                     def attempts = 0
-                    def maxAttempts = 5
+                    def maxAttempts = 7
                     def sleepTime = 30 // seconds
+                 
 
                     while (externalIP == '' && attempts < maxAttempts) {
                         withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
@@ -114,6 +115,8 @@ pipeline {
                             sleep sleepTime
                             attempts++
                         }
+                        if (attempts == 0) {
+                            sleepTime = 5
                     }
 
                     if (externalIP != null && externalIP!='') {
@@ -161,7 +164,7 @@ pipeline {
 
 def checkNodeResourceUsage() {
     while (true) {
-        sleep time: 20, unit: 'SECONDS'
+        sleep time: 10, unit: 'SECONDS'
 
         def usageExceeded = false
 
