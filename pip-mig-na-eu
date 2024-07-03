@@ -72,7 +72,7 @@ pipeline {
                     def externalIP = ''
                     def attempts = 0
                     def maxAttempts = 5
-                    def sleepTime = 60 // seconds
+                    def sleepTime = 30 // seconds
 
                     while (externalIP == '' && attempts < maxAttempts) {
                         withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
@@ -85,8 +85,7 @@ pipeline {
                             echo "Waiting for external IP to be assigned..."
                             sleep sleepTime
                             attempts++
-                            if (attempts == 1) {
-                                sleepTime = 10
+                            sleepTime =10
                             }
                         }
                     }
