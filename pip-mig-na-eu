@@ -114,4 +114,14 @@ pipeline {
             }
         }
     }
+    post {
+        success {
+            script {
+                // Attendre 30 secondes avant de déclencher du charge
+                sleep(time: 30, unit: 'SECONDS')
+                // Déclencher le job suivant
+                build job: 'charge node'
+            }
+        }
+    }
 }
