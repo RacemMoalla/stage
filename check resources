@@ -128,6 +128,7 @@ pipeline {
                     } else {
                         error "Failed to retrieve external IP after ${maxAttempts} attempts"
                     }
+                    }
                 }
             }
         }
@@ -146,7 +147,7 @@ pipeline {
             }
         }
     }
-
+     
     post {
         always {
             node('') {
@@ -204,4 +205,4 @@ def extractNumericValue(valueString) {
     return numericValue.toDouble()
 }
 
-}
+
