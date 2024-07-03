@@ -85,8 +85,8 @@ pipeline {
                             echo "Waiting for external IP to be assigned..."
                             sleep sleepTime
                             attempts++
-                            sleepTime =10
-                            }
+                            sleepTime =2
+                            
                         }
                     }
 
