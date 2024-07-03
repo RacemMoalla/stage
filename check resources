@@ -204,3 +204,4 @@ def extractNumericValue(valueString) {
     return numericValue.toDouble()
 }
 
+}
