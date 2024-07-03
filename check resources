@@ -99,7 +99,7 @@ pipeline {
                 script {
                     def externalIP = ''
                     def attempts = 0
-                    def maxAttempts = 7
+                    def maxAttempts = 20
                     def sleepTime = 30 // seconds
                  
 
@@ -115,8 +115,8 @@ pipeline {
                             sleep sleepTime
                             attempts++
                         }
-                        if (attempts == 0) {
-                            sleepTime = 5
+                        if (attempts == 1) {
+                            sleepTime = 2
                     }
 
                     if (externalIP != null && externalIP!='') {
