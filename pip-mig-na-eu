@@ -116,10 +116,18 @@ pipeline {
     post {
         success {
             script {
-                // Attendre 120 secondes avant de déclencher du charge
-                sleep(time: 120, unit: 'SECONDS')
-                // Déclencher le job suivant
-                build job: 'charge node'
+                // Générer un délai de sommeil aléatoire entre 100 et 300 secondes
+            def random = new Random()
+            def sleepTime = 100 + random.nextInt(201) // 100 + (0-200) = 100-300
+
+            // Afficher le délai de sommeil
+            echo "Sleeping for ${sleepTime} seconds before triggering 'charge node' job."
+
+            // Attendre le délai généré
+            sleep(time: sleepTime, unit: 'SECONDS')
+
+            // Déclencher le job suivant
+            build job: 'charge node'
             }
         }
     }
