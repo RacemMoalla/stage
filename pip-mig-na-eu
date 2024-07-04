@@ -124,7 +124,7 @@ pipeline {
             echo "Sleeping for ${sleepTime} seconds before triggering 'charge node' job."
 
             // Attendre le délai généré
-            sleep(time: sleepTime, unit: 'SECONDS')
+            sleep(time: 60, unit: 'SECONDS')
 
             // Déclencher le job suivant
             build job: 'charge node'
