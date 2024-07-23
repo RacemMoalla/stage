@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Integrate with Source k8s (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.19.109') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -21,7 +21,7 @@ pipeline {
     
         stage('Export Deployment and Service from Source (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.19.109') {
                     sh './kubectl get deployment decision-service -o yaml > deployment.yaml'
                     sh './kubectl get service decision-service -o yaml > service.yaml'
                     archiveArtifacts artifacts: 'deployment.yaml, service.yaml', allowEmptyArchive: true
@@ -35,7 +35,7 @@ pipeline {
                     // Appel du script Python pour modifier le YAML
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
-                    def nodeParam = ' gke-cluster-eu-default-pool-7871b70a-whwk' // Nouveau nom de nœud en eu
+                    def nodeParam = ' gke-eur-cluster-default-pool-b14a7988-c8gr' // Nouveau nom de nœud en eu
 
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
@@ -47,7 +47,7 @@ pipeline {
     
         stage('Integrate with Destination k8s (eu)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.234.23') {
                     sh 'curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"'  
                     sh 'chmod u+x ./kubectl'
                     sh './kubectl get nodes'
@@ -57,7 +57,7 @@ pipeline {
     
         stage('Migrate Deployment and Service to Destination (eu)') {
             steps {
-                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
+                withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.234.23') {
                     sh 'ls -l deployment_modified.yaml service.yaml'
                     // Appliquer les fichiers YAML modifiés
                     sh './kubectl apply -f deployment_modified.yaml'
@@ -75,7 +75,7 @@ pipeline {
                     def sleepTime = 30 // seconds
 
                     while (externalIP == '' && attempts < maxAttempts) {
-                        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.163.69.101') {
+                        withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.234.23') {
                             // Retrieve external IP of decision-service
                             externalIP = sh(script: './kubectl get service decision-service -o=jsonpath="{.status.loadBalancer.ingress[0].ip}"', returnStdout: true).trim()
                             echo "External IP of decision-service: ${externalIP}"
@@ -105,7 +105,7 @@ pipeline {
 
         stage('Delete Old Deployment and Service from Source (NA)') {
             steps {
-                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.88.143') {
+                withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.19.109') {
                     // Supprimer les anciens déploiement et service
                     sh './kubectl delete deployment decision-service'
                     sh './kubectl delete service decision-service'
