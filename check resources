@@ -85,8 +85,8 @@ pipeline {
             steps {
                 withKubeConfig(credentialsId: 'kube-na', caCertificate: '', serverUrl: 'https://34.130.19.109') {
                     sh 'ls -l deployment_modified.yaml service.yaml'
-                    sh './kubectl apply -f deployment_modified.yaml'
-                    sh './kubectl apply -f service.yaml'
+                    sh './kubectl apply -f deployment_modified.yaml --force'
+                    sh './kubectl apply -f service.yaml --force'
                 }
             }
         }
