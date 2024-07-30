@@ -61,7 +61,7 @@ pipeline {
                     sh 'ls -l deployment_modified.yaml service.yaml'
                     // Appliquer les fichiers YAML modifiés
                     sh './kubectl apply -f deployment_modified.yaml'
-                    sh './kubectl apply -f service.yaml'
+                    sh './kubectl apply -f service.yaml --force'
                 }
             }
         }
