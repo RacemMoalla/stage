@@ -60,7 +60,7 @@ pipeline {
                 withKubeConfig(credentialsId: 'kub-eu', caCertificate: '', serverUrl: 'https://34.155.234.23') {
                     sh 'ls -l deployment_modified.yaml service.yaml'
                     // Appliquer les fichiers YAML modifiés
-                    sh './kubectl apply -f deployment_modified.yaml'
+                    sh './kubectl apply -f deployment_modified.yaml --force'
                     sh './kubectl apply -f service.yaml --force'
                 }
             }
