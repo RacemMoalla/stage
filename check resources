@@ -121,7 +121,7 @@ pipeline {
                     }
                   
                     if (externalIP != null && externalIP!='') {
-                        def apiUrl = "http://34.163.222.120:3000/update-cluster-ip"
+                        def apiUrl = "http://34.163.199.27 :3000/update-cluster-ip"
                         def payload = "{\"updatedIP\": \"${externalIP}\", \"apply_delay\": \"1\"}"
 
                         // Make the API call using curl
