@@ -56,7 +56,7 @@ pipeline {
                 script {
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
-                    def nodeParam = 'gke-na-cluster-default-pool-f91be5e4-8tpc' // Nouveau nom de nœud en NA
+                    def nodeParam = 'gke-na-cluster-default-pool-f91be5e4-662x' // Nouveau nom de nœud en NA
 
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
