@@ -35,7 +35,7 @@ pipeline {
                     // Appel du script Python pour modifier le YAML
                     def inputYaml = 'deployment.yaml'
                     def outputYaml = 'deployment_modified.yaml'
-                    def nodeParam = ' gke-eur-cluster-default-pool-b14a7988-c8gr' // Nouveau nom de nœud en eu
+                    def nodeParam = ' gke-eur-cluster-default-pool-b14a7988-tdzq' // Nouveau nom de nœud en eu
 
                     sh "python3 mig.py ${inputYaml} ${outputYaml} ${nodeParam}"
 
